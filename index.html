@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLGO - Видеочат с друзьями</title>
+    <meta name="description" content="VLGO - современный видеозвонковый сервис с чатом, группами и демонстрацией экрана">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 fill=%22%236c63ff%22>V</text></svg>">
+</head>
+<body>
+    <!-- Модальные окна -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content auth-form">
+            <div class="logo-header">
+                <h1><span class="logo-v">V</span><span class="logo-lgo">LGO</span></h1>
+                <p class="logo-subtitle">Современный видеочат</p>
+            </div>
+            <h2><i class="fas fa-sign-in-alt"></i> Вход</h2>
+            <input type="text" id="loginUsername" placeholder="Имя пользователя">
+            <input type="password" id="loginPassword" placeholder="Пароль">
+            <button onclick="login()">Войти</button>
+            <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content auth-form">
+            <div class="logo-header">
+                <h1><span class="logo-v">V</span><span class="logo-lgo">LGO</span></h1>
+                <p class="logo-subtitle">Присоединяйтесь к сообществу</p>
+            </div>
+            <h2><i class="fas fa-user-plus"></i> Регистрация</h2>
+            <input type="text" id="registerUsername" placeholder="Имя пользователя">
+            <input type="email" id="registerEmail" placeholder="Email">
+            <input type="password" id="registerPassword" placeholder="Пароль">
+            <button onclick="register()">Зарегистрироваться</button>
+            <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+        </div>
+    </div>
+
+    <!-- Остальные модальные окна остаются как в предыдущей версии -->
+    <div id="addFriendModal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-user-plus"></i> Добавить друга</h2>
+            <input type="text" id="friendUsername" placeholder="Имя пользователя">
+            <button onclick="sendFriendRequest()">Отправить запрос</button>
+        </div>
+    </div>
+
+    <div id="createGroupModal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-users"></i> Создать группу</h2>
+            <input type="text" id="groupName" placeholder="Название группы">
+            <div id="friendsForGroup" class="friends-list">
+                <!-- Список друзей для выбора -->
+            </div>
+            <button onclick="createGroup()">Создать группу</button>
+        </div>
+    </div>
+
+    <div id="callModal" class="modal">
+        <div class="modal-content call-modal">
+            <h2 id="callTitle">Входящий звонок</h2>
+            <div class="video-container">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <video id="remoteVideo" autoplay playsinline></video>
+            </div>
+            <div class="call-controls">
+                <button class="btn-success" onclick="answerCall()" id="answerBtn">
+                    <i class="fas fa-phone"></i> Принять
+                </button>
+                <button class="btn-danger" onclick="endCall()" id="endBtn">
+                    <i class="fas fa-phone-slash"></i> Завершить
+                </button>
+                <button class="btn-secondary" onclick="toggleCamera()" id="cameraBtn">
+                    <i class="fas fa-video"></i> Камера
+                </button>
+                <button class="btn-secondary" onclick="toggleScreenShare()" id="screenBtn">
+                    <i class="fas fa-desktop"></i> Экран
+                </button>
+                <button class="btn-secondary" onclick="toggleMic()" id="micBtn">
+                    <i class="fas fa-microphone"></i> Микрофон
+                </button>
+            </div>
+            <div class="call-info">
+                <p id="callStatus">Соединение...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной интерфейс -->
+    <div class="container">
+        <!-- Левая панель - Список друзей и групп -->
+        <div class="sidebar">
+            <div class="user-info">
+                <div class="app-logo">
+                    <span class="logo-v">V</span><span class="logo-lgo">LGO</span>
+                </div>
+                <div class="user-details">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div>
+                        <h3 id="currentUsername">Гость</h3>
+                        <p id="userStatus">Не в сети</p>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="logout()" title="Выйти">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('friends')">
+                    <i class="fas fa-user-friends"></i> Друзья
+                </button>
+                <button class="tab" onclick="switchTab('groups')">
+                    <i class="fas fa-users"></i> Группы
+                </button>
+                <button class="tab" onclick="switchTab('pending')">
+                    <i class="fas fa-clock"></i> Запросы <span id="pendingCount" class="badge">0</span>
+                </button>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="searchContacts" placeholder="Поиск...">
+                <i class="fas fa-search"></i>
+            </div>
+
+            <div class="contacts-list" id="contactsList">
+                <!-- Список друзей и групп -->
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="btn-primary" onclick="showAddFriendModal()">
+                    <i class="fas fa-user-plus"></i> Добавить друга
+                </button>
+                <button class="btn-primary" onclick="showCreateGroupModal()">
+                    <i class="fas fa-plus"></i> Создать группу
+                </button>
+            </div>
+        </div>
+
+        <!-- Центральная панель - Чат -->
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="chat-partner">
+                    <div class="avatar small" id="chatAvatar">?</div>
+                    <div>
+                        <h3 id="chatPartnerName">Выберите чат</h3>
+                        <p id="chatStatus">Начните общение</p>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="btn-action" onclick="startVideoCall()" id="videoCallBtn" disabled>
+                        <i class="fas fa-video"></i>
+                    </button>
+                    <button class="btn-action" onclick="startVoiceCall()" id="voiceCallBtn" disabled>
+                        <i class="fas fa-phone"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- Сообщения будут здесь -->
+                <div class="welcome-message">
+                    <div class="logo-welcome">
+                        <span class="logo-v">V</span><span class="logo-lgo">LGO</span>
+                    </div>
+                    <h3>Добро пожаловать в VLGO</h3>
+                    <p>Современный видеозвонковый сервис с чатом и группами</p>
+                    <div class="features">
+                        <div class="feature">
+                            <i class="fas fa-video"></i>
+                            <span>Видеозвонки</span>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-users"></i>
+                            <span>Группы</span>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-desktop"></i>
+                            <span>Демонстрация экрана</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="input-actions">
+                    <button class="btn-icon" onclick="attachFile()">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <button class="btn-icon" onclick="sendImage()">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button class="btn-icon" onclick="toggleEmoji()">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                </div>
+                <input type="text" id="messageInput" placeholder="Напишите сообщение..." disabled>
+                <button class="btn-send" onclick="sendMessage()" disabled id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Правая панель - Информация -->
+        <div class="right-sidebar">
+            <div class="app-info">
+                <div class="logo-header-sidebar">
+                    <h2><span class="logo-v">V</span><span class="logo-lgo">LGO</span></h2>
+                    <p class="version">Версия 1.0.0</p>
+                </div>
+                <p class="app-description">
+                    Современный видеозвонковый сервис для общения с друзьями и коллегами
+                </p>
+            </div>
+
+            <div class="info-panel">
+                <h3><i class="fas fa-info-circle"></i> Информация о чате</h3>
+                <div id="chatInfo">
+                    <p>Выберите чат для просмотра информации</p>
+                </div>
+            </div>
+
+            <div class="online-users">
+                <h3><i class="fas fa-wifi"></i> Онлайн сейчас <span id="onlineCount">0</span></h3>
+                <div id="onlineList">
+                    <!-- Список онлайн пользователей -->
+                </div>
+            </div>
+
+            <div class="call-history">
+                <h3><i class="fas fa-history"></i> История звонков</h3>
+                <div id="callHistory">
+                    <!-- История звонков -->
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <h3><i class="fas fa-bolt"></i> Быстрые действия</h3>
+                <button class="btn-quick" onclick="startVideoCall()">
+                    <i class="fas fa-video"></i> Быстрый звонок
+                </button>
+                <button class="btn-quick" onclick="showCreateGroupModal()">
+                    <i class="fas fa-users"></i> Новая группа
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker -->
+    <div id="emojiPicker" class="emoji-picker">
+        <div class="emoji-grid">
+            <button onclick="addEmoji('😊')">😊</button>
+            <button onclick="addEmoji('😂')">😂</button>
+            <button onclick="addEmoji('❤️')">❤️</button>
+            <button onclick="addEmoji('👍')">👍</button>
+            <button onclick="addEmoji('🎉')">🎉</button>
+            <button onclick="addEmoji('🔥')">🔥</button>
+            <button onclick="addEmoji('😍')">😍</button>
+            <button onclick="addEmoji('🙏')">🙏</button>
+            <button onclick="addEmoji('😎')">😎</button>
+            <button onclick="addEmoji('🤔')">🤔</button>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
